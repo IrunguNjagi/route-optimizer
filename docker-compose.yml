@@ -11,7 +11,7 @@ services:
       SOLVER_TIMEOUT_SECONDS: ${SOLVER_TIMEOUT_SECONDS:-5}
       MAX_STOPS: ${MAX_STOPS:-24}
       MAP_TILE_URL: ${MAP_TILE_URL:-https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png}
-      MAP_ATTRIBUTION: ${MAP_ATTRIBUTION:-&copy; OpenStreetMap contributors}
+      MAP_ATTRIBUTION: ${MAP_ATTRIBUTION:-<a href="https://www.openstreetmap.org/copyright">&copy; OpenStreetMap contributors</a>}
     depends_on:
       osrm:
         condition: service_started
@@ -50,3 +50,4 @@ networks:
 volumes:
   caddy_data:
   caddy_config:
+

@@ -170,7 +170,7 @@
     } catch (error) {
       if (error.name !== 'AbortError' && requestId === state.requestId) status(error.message, true);
     } finally {
-      if (requestId === state.requestId) { $('optimize').disabled = !state.depot || !state.stops.length; $('optimize').textContent = 'Optimize route'; }
+      if (requestId === state.requestId) { state.controller = null; optimize.disabled = !state.depot || !state.stops.length; optimize.textContent = 'Optimize route'; }
     }
   }
   function formatDuration(seconds) {

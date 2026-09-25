@@ -14,7 +14,7 @@ OSRM_BASE_URL = os.getenv("OSRM_BASE_URL", "http://localhost:5000").rstrip("/")
 OSRM_TIMEOUT_SECONDS = float(os.getenv("OSRM_TIMEOUT_SECONDS", "10"))
 SOLVER_TIMEOUT_SECONDS = int(os.getenv("SOLVER_TIMEOUT_SECONDS", "5"))
 MAP_TILE_URL = os.getenv("MAP_TILE_URL", "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
-MAP_ATTRIBUTION = os.getenv("MAP_ATTRIBUTION", "&copy; OpenStreetMap contributors")
+MAP_ATTRIBUTION = os.getenv("MAP_ATTRIBUTION", '<a href="https://www.openstreetmap.org/copyright">&copy; OpenStreetMap contributors</a>')
 UNREACHABLE_COST = 10**9
 
 app = Flask(__name__)
@@ -58,9 +58,19 @@ def _parse_request(payload: Any) -> tuple[dict[str, Any], list[dict[str, Any]], 
     if len(raw_stops) > MAX_STOPS:
         raise ApiError(f"A maximum of {MAX_STOPS} stops is supported.")
     stops = []
+    stop_ids = set()
     for index, raw_stop in enumerate(raw_stops, start=1):
         stop = _coordinate(raw_stop, f"Stop {index}")
-        stop["id"] = raw_stop.get("id", f"stop-{index}")
+        stop_id = raw_stop.get("id", f"stop-{index}")
+        if isinstance(stop_id, bool) or not isinstance(stop_id, (str, int)):
+            raise ApiError(f"Stop {index} id must be a string or integer.")
+        stop_id = str(stop_id)
+        if not stop_id or len(stop_id) > 100:
+            raise ApiError(f"Stop {index} id must contain between 1 and 100 characters.")
+        if stop_id in stop_ids:
+            raise ApiError("Stop ids must be unique.")
+        stop_ids.add(stop_id)
+        stop["id"] = stop_id
         stops.append(stop)
     round_trip = payload.get("round_trip", True)
     if not isinstance(round_trip, bool):
@@ -154,7 +164,7 @@ def healthz():
 
 @app.get("/config")
 def config():
-    return jsonify({"map_tile_url": MAP_TILE_URL, "map_attribution": MAP_ATTRIBUTION})
+    return jsonify({"map_tile_url": MAP_TILE_URL, "map_attribution": MAP_ATTRIBUTION, "max_stops": MAX_STOPS})
 
 
 @app.post("/optimize")
@@ -194,6 +204,7 @@ def optimize():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5001")), debug=False)
+
 
 
 
