@@ -12,7 +12,9 @@ FRONTEND_DIR = ROOT / "frontend"
 MAX_STOPS = int(os.getenv("MAX_STOPS", "24"))
 OSRM_BASE_URL = os.getenv("OSRM_BASE_URL", "http://localhost:5000").rstrip("/")
 OSRM_TIMEOUT_SECONDS = float(os.getenv("OSRM_TIMEOUT_SECONDS", "10"))
-SOLVER_TIMEOUT_SECONDS = int(os.getenv("SOLVER_TIMEOUT_SECONDS", "5"))`r`nMAP_TILE_URL = os.getenv("MAP_TILE_URL", "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")`r`nMAP_ATTRIBUTION = os.getenv("MAP_ATTRIBUTION", "&copy; OpenStreetMap contributors")
+SOLVER_TIMEOUT_SECONDS = int(os.getenv("SOLVER_TIMEOUT_SECONDS", "5"))
+MAP_TILE_URL = os.getenv("MAP_TILE_URL", "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png")
+MAP_ATTRIBUTION = os.getenv("MAP_ATTRIBUTION", "&copy; OpenStreetMap contributors")
 UNREACHABLE_COST = 10**9
 
 app = Flask(__name__)
@@ -150,6 +152,11 @@ def healthz():
     return jsonify({"status": "ok"})
 
 
+@app.get("/config")
+def config():
+    return jsonify({"map_tile_url": MAP_TILE_URL, "map_attribution": MAP_ATTRIBUTION})
+
+
 @app.post("/optimize")
 def optimize():
     depot, stops, round_trip = _parse_request(request.get_json(silent=True))
@@ -167,7 +174,7 @@ def optimize():
         route_points.append(depot)
     route_data = _osrm_get(
         "route", route_points, overview="full", geometries="geojson", steps="false"
-    )
+   )
     routes = route_data.get("routes")
     if not isinstance(routes, list) or not routes:
         raise ApiError("The routing service did not return route geometry.", 502)
@@ -187,4 +194,6 @@ def optimize():
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5001")), debug=False)
+
+
 

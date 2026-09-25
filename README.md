@@ -31,7 +31,7 @@ The production Compose stack runs the Flask app, self-hosted OSRM and Caddy on o
 
 1. Install Docker Engine and the Docker Compose plugin. Point the application's DNS name at the host and allow inbound TCP ports 80 and 443 (UDP 443 enables HTTP/3).
 2. Download a regional `.osm.pbf` extract from a source such as [Geofabrik](https://download.geofabrik.de/) and place it at `osrm/data/region.osm.pbf`. Pick an extract that covers all expected depots and stops; allow for RAM and disk requirements during preprocessing.
-3. From the repository root, preprocess the extract using the same OSRM image as the server:
+3. From the repository root, preprocess the extract using the same OSRM image as the server, following the [official OSRM Docker instructions](https://github.com/Project-OSRM/osrm-backend#using-docker):
 
 ```sh
 docker run --rm -t -v "$PWD/osrm/data:/data" ghcr.io/project-osrm/osrm-backend:26.7.3 \
@@ -84,3 +84,4 @@ Coordinates use decimal latitude and longitude. `round_trip` defaults to no impl
 ## Current boundaries
 
 The app keeps route data in browser memory and does not persist customer information. It does not geocode addresses, assign time windows or service times, or optimize multiple drivers. OSRM travel-time estimates do not account for live traffic unless the self-hosted routing data is updated with an appropriate traffic workflow.
+

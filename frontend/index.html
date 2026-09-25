@@ -84,9 +84,11 @@
 (() => {
   const MAX_STOPS = 24;
   const map = L.map('map', { zoomControl: true }).setView([0, 0], 2);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-  }).addTo(map);
+  fetch('/config').then((r) => r.ok ? r.json() : Promise.reject(new Error('Map configuration unavailable'))).then((cfg) => {
+    L.tileLayer(cfg.map_tile_url, { maxZoom: 19, attribution: cfg.map_attribution }).addTo(map);
+  }).catch(() => {
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
+  });
   const state = { depot: null, stops: [], markers: new Map(), routeLayer: null, nextId: 1, timer: null, controller: null, requestId: 0 };
   const $ = (id) => document.getElementById(id);
   const status = (message, error = false) => { $('status').textContent = message; $('status').classList.toggle('error', error); };
@@ -94,7 +96,7 @@
   const point = (latlng, id) => ({ id, lat: latlng.lat, lng: latlng.lng });
   const markerFor = (location, kind, label) => {
     const marker = L.marker([location.lat, location.lng], { draggable: true, icon: icon(kind, label) }).addTo(map);
-    marker.on('dragstart', clearRoute);
+    marker.on('dragstart', () => { cancelPending(); clearRoute(); });
     marker.on('dragend', () => {
       const ll = marker.getLatLng();
       if (kind === 'depot') state.depot = point(ll, 'depot');
@@ -103,6 +105,13 @@
     });
     return marker;
   };
+  function cancelPending() {
+    clearTimeout(state.timer);
+    if (state.controller) { state.controller.abort(); state.controller = null; }
+    state.requestId++;
+    $('optimize').disabled = !state.depot || !state.stops.length;
+    $('optimize').textContent = 'Optimize route';
+  }
   function clearRoute() {
     if (state.routeLayer) { map.removeLayer(state.routeLayer); state.routeLayer = null; }
     $('stats').style.display = 'none';
@@ -146,7 +155,10 @@
       if (!response.ok) throw new Error(data.error || 'Could not optimize this route.');
       if (requestId !== state.requestId) return;
       state.stops = data.stops;
-      data.stops.forEach((stop, index) => {`r`n        const marker = state.markers.get(stop.id);`r`n        if (marker) { marker.setLatLng([stop.lat, stop.lng]); marker.setIcon(icon('stop', String(index + 1))); }`r`n      });
+      data.stops.forEach((stop, index) => {
+        const marker = state.markers.get(stop.id);
+        if (marker) { marker.setLatLng([stop.lat, stop.lng]); marker.setIcon(icon('stop', String(index + 1))); }
+      });
       renderList();
       state.routeLayer = L.geoJSON(data.route, { style: { color: '#235bd6', weight: 5, opacity: .88, lineCap: 'round', lineJoin: 'round' } }).addTo(map);
       const bounds = state.routeLayer.getBounds();
@@ -172,6 +184,7 @@
     return km >= 100 ? `${Math.round(km)} km` : `${km.toFixed(km < 10 ? 1 : 0)} km`;
   }
   map.on('click', (event) => {
+    cancelPending();
     if (!state.depot) {
       state.depot = point(event.latlng, 'depot');
       state.markers.set('depot', markerFor(state.depot, 'depot', 'D'));
@@ -193,7 +206,7 @@
     if (state.depot && state.stops.length) optimize(true);
   });
   $('clear').addEventListener('click', () => {
-    clearTimeout(state.timer); if (state.controller) state.controller.abort(); state.requestId++;
+    cancelPending();
     state.markers.forEach((marker) => map.removeLayer(marker)); state.markers.clear();
     state.depot = null; state.stops = []; state.nextId = 1; clearRoute(); $('stats').style.display = 'none';
     status('Waiting for locations.'); renderList(); map.setView([0, 0], 2);
@@ -203,4 +216,7 @@
 </script>
 </body>
 </html>
+
+
+
 
