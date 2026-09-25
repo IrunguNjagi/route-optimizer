@@ -94,7 +94,3 @@ The browser behavior and Compose deployment also need an interactive map check a
 ## Current boundaries
 
 The app keeps route data in browser memory and does not persist customer information. It does not geocode addresses, assign time windows or service times, or optimize multiple drivers. OSRM travel-time estimates do not account for live traffic unless the self-hosted routing data is updated with an appropriate traffic workflow.
-
-
-
-
