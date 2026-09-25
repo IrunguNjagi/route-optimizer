@@ -1,0 +1,52 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      PORT: "5001"
+      OSRM_BASE_URL: http://osrm:5000
+      OSRM_TIMEOUT_SECONDS: ${OSRM_TIMEOUT_SECONDS:-10}
+      SOLVER_TIMEOUT_SECONDS: ${SOLVER_TIMEOUT_SECONDS:-5}
+      MAX_STOPS: ${MAX_STOPS:-24}
+      MAP_TILE_URL: ${MAP_TILE_URL:-https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png}
+      MAP_ATTRIBUTION: ${MAP_ATTRIBUTION:-&copy; OpenStreetMap contributors}
+    depends_on:
+      osrm:
+        condition: service_started
+    networks: [routing]
+
+  osrm:
+    image: ghcr.io/project-osrm/osrm-backend:26.7.3
+    restart: unless-stopped
+    command: ["osrm-routed", "--algorithm", "mld", "/data/region.osrm"]
+    volumes:
+      - ./osrm/data:/data:ro
+    networks: [routing]
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      CADDY_DOMAIN: ${CADDY_DOMAIN:?Set CADDY_DOMAIN in .env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [routing]
+
+networks:
+  routing:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:

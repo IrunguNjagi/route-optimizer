@@ -146,7 +146,7 @@
       if (!response.ok) throw new Error(data.error || 'Could not optimize this route.');
       if (requestId !== state.requestId) return;
       state.stops = data.stops;
-      data.stops.forEach((stop) => state.markers.get(stop.id)?.setLatLng([stop.lat, stop.lng]));
+      data.stops.forEach((stop, index) => {`r`n        const marker = state.markers.get(stop.id);`r`n        if (marker) { marker.setLatLng([stop.lat, stop.lng]); marker.setIcon(icon('stop', String(index + 1))); }`r`n      });
       renderList();
       state.routeLayer = L.geoJSON(data.route, { style: { color: '#235bd6', weight: 5, opacity: .88, lineCap: 'round', lineJoin: 'round' } }).addTo(map);
       const bounds = state.routeLayer.getBounds();
@@ -203,3 +203,4 @@
 </script>
 </body>
 </html>
+
