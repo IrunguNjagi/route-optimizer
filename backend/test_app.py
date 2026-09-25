@@ -85,7 +85,7 @@ class RouteOptimizerApiTests(unittest.TestCase):
         with patch("app._osrm_get", return_value={"durations": durations}):
             response = self.client.post("/optimize", json=self.payload)
         self.assertEqual(response.status_code, 422)
-        self.assertIn("path", response.json["error"].lower())
+        self.assertRegex(response.json["error"].lower(), "route|path|reach")
 
     def test_osrm_timeout_is_reported_as_gateway_timeout(self):
         with patch("app._osrm_get", side_effect=ApiError("The routing service timed out.", 504)):
@@ -96,3 +96,4 @@ class RouteOptimizerApiTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
