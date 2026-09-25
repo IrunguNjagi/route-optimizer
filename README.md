@@ -67,7 +67,7 @@ The site is available at `https://<CADDY_DOMAIN>`. The app and API share one ori
 }
 ```
 
-Coordinates use decimal latitude and longitude. `round_trip` is required and must be a boolean. The response contains the optimized stop list, a GeoJSON route feature, total road distance in meters, and estimated drive time in seconds. Errors return a JSON `error` message with an appropriate HTTP status. `GET /healthz` is a lightweight application health check; `GET /config` returns the configured basemap URL, attribution, and stop limit.
+Coordinates use decimal latitude and longitude. `round_trip` is a boolean and defaults to `true`. The response contains the optimized stop list, a GeoJSON route feature, total road distance in meters, and estimated drive time in seconds. Errors return a JSON `error` message with an appropriate HTTP status. `GET /healthz` is a lightweight application health check; `GET /config` returns the configured basemap URL, attribution, and stop limit.
 
 ## Configuration
 
@@ -84,5 +84,6 @@ Coordinates use decimal latitude and longitude. `round_trip` is required and mus
 ## Current boundaries
 
 The app keeps route data in browser memory and does not persist customer information. It does not geocode addresses, assign time windows or service times, or optimize multiple drivers. OSRM travel-time estimates do not account for live traffic unless the self-hosted routing data is updated with an appropriate traffic workflow.
+
 
 

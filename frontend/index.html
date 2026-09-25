@@ -82,10 +82,12 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 <script>
 (() => {
-  const MAX_STOPS = 24;
+  let MAX_STOPS = 24;
   const map = L.map('map', { zoomControl: true }).setView([0, 0], 2);
   fetch('/config').then((r) => r.ok ? r.json() : Promise.reject(new Error('Map configuration unavailable'))).then((cfg) => {
     L.tileLayer(cfg.map_tile_url, { maxZoom: 19, attribution: cfg.map_attribution }).addTo(map);
+    MAX_STOPS = Number(cfg.max_stops) || 24;
+    renderList();
   }).catch(() => {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
   });
@@ -170,7 +172,7 @@
     } catch (error) {
       if (error.name !== 'AbortError' && requestId === state.requestId) status(error.message, true);
     } finally {
-      if (requestId === state.requestId) { state.controller = null; optimize.disabled = !state.depot || !state.stops.length; optimize.textContent = 'Optimize route'; }
+      if (requestId === state.requestId) { state.controller = null; $('optimize').disabled = !state.depot || !state.stops.length; $('optimize').textContent = 'Optimize route'; }
     }
   }
   function formatDuration(seconds) {
