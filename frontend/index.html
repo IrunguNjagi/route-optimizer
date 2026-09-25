@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f7f9">
+  <title>Route Optimizer</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <style>
+    :root { color-scheme: light; --ink:#17202d; --muted:#6e7784; --line:#e5e9ee; --blue:#235bd6; --surface:#fff; --canvas:#f4f6f8; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--canvas); color:var(--ink); font:15px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    .app { height:100vh; min-height:540px; display:grid; grid-template-columns:370px minmax(0,1fr); }
+    aside { z-index:500; display:flex; flex-direction:column; gap:18px; padding:25px 23px 18px; background:var(--surface); border-right:1px solid var(--line); overflow:auto; }
+    .eyebrow { color:var(--blue); font-size:11px; font-weight:750; letter-spacing:.12em; text-transform:uppercase; }
+    h1 { margin:5px 0 4px; font-size:25px; letter-spacing:-.04em; }
+    .subhead { margin:0; color:var(--muted); font-size:13px; }
+    .section-title { display:flex; align-items:center; justify-content:space-between; font-weight:700; font-size:14px; }
+    .count { color:var(--muted); font-size:12px; font-weight:600; }
+    .instructions { border:1px solid var(--line); border-radius:12px; background:#fafbfc; padding:13px 14px; color:#4e5967; font-size:12px; }
+    .instructions div { display:flex; gap:9px; align-items:flex-start; margin:4px 0; }
+    .dot { flex:0 0 auto; width:8px; height:8px; margin-top:5px; border-radius:100%; background:#22a06b; }
+    .dot.stop { background:#e88c39; }
+    .stops { flex:1 0 90px; min-height:80px; overflow:auto; border-top:1px solid var(--line); }
+    .empty { padding:18px 4px; color:#89919c; font-size:13px; }
+    .stop-row { display:flex; align-items:center; gap:11px; border-bottom:1px solid #f0f2f5; padding:10px 3px; font-size:13px; }
+    .stop-num { display:grid; place-items:center; width:25px; height:25px; border-radius:50%; color:#9b551d; background:#fff0e3; font-size:11px; font-weight:750; }
+    .stop-coord { color:var(--muted); font-variant-numeric:tabular-nums; font-size:11px; }
+    .route-settings { display:flex; align-items:center; justify-content:space-between; border:1px solid var(--line); border-radius:11px; padding:12px 13px; font-size:13px; font-weight:600; }
+    .toggle { display:flex; align-items:center; gap:9px; cursor:pointer; }
+    .toggle input { accent-color:var(--blue); width:16px; height:16px; margin:0; }
+    .actions { display:grid; gap:9px; }
+    button { border:0; border-radius:10px; padding:12px 14px; cursor:pointer; font:inherit; font-size:13px; font-weight:700; }
+    button:disabled { cursor:not-allowed; opacity:.55; }
+    .primary { color:#fff; background:var(--blue); box-shadow:0 3px 8px #235bd62b; }
+    .primary:hover:not(:disabled) { background:#194dbd; }
+    .secondary { border:1px solid var(--line); background:#fff; color:#56606c; }
+    .stats { display:none; grid-template-columns:1fr 1fr; gap:10px; }
+    .stat { border:1px solid var(--line); border-radius:10px; padding:11px 12px; }
+    .stat-label { color:var(--muted); font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; }
+    .stat-value { margin-top:2px; font-size:18px; font-weight:750; letter-spacing:-.03em; }
+    .status { min-height:18px; color:var(--muted); font-size:12px; }
+    .status.error { color:#b42318; }
+    .credits { color:#9098a2; font-size:10px; }
+    #map { width:100%; height:100%; background:#e9eef1; }
+    .map-badge { position:absolute; z-index:400; top:16px; left:16px; padding:8px 12px; border:1px solid #0000000d; border-radius:9px; background:#fff; box-shadow:0 3px 12px #18233218; font-size:11px; font-weight:650; }
+    .pin { display:grid; place-items:center; width:30px; height:30px; border:2px solid #fff; border-radius:50% 50% 50% 8px; transform:rotate(-45deg); box-shadow:0 2px 8px #14223550; color:#fff; font-size:11px; font-weight:800; }
+    .pin span { transform:rotate(45deg); }
+    .pin.depot { background:#22a06b; }
+    .pin.stop { background:#e88c39; }
+    @media(max-width:760px) { .app { height:auto; min-height:100vh; grid-template-columns:1fr; grid-template-rows:minmax(55vh,1fr) auto; } #map { grid-row:1; min-height:55vh; } aside { grid-row:2; overflow:visible; padding:20px 18px; } .stops { max-height:180px; overflow:auto; } .map-badge { top:12px; left:12px; } }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside>
+    <header>
+      <div class="eyebrow">Drive-time routing</div>
+      <h1>Route Optimizer</h1>
+      <p class="subhead">Find the quickest order for your stops.</p>
+    </header>
+    <div class="instructions">
+      <div><i class="dot"></i><span>Click the map to place your depot first.</span></div>
+      <div><i class="dot stop"></i><span>Click again to add stops. Drag pins to move them.</span></div>
+    </div>
+    <div class="section-title"><span>Your stops</span><span id="count" class="count">0 / 24</span></div>
+    <div id="stops" class="stops"><div class="empty">No depot or stops yet. Click anywhere on the map to begin.</div></div>
+    <label class="route-settings"><span>Return to depot</span><span class="toggle"><input id="roundTrip" type="checkbox" checked> <span id="modeLabel">Round trip</span></span></label>
+    <div id="stats" class="stats">
+      <div class="stat"><div class="stat-label">Drive time</div><div id="duration" class="stat-value">—</div></div>
+      <div class="stat"><div class="stat-label">Road distance</div><div id="distance" class="stat-value">—</div></div>
+    </div>
+    <div class="actions">
+      <button id="optimize" class="primary" disabled>Optimize route</button>
+      <button id="clear" class="secondary">Clear map</button>
+    </div>
+    <div id="status" class="status" aria-live="polite">Waiting for locations.</div>
+    <footer class="credits">Map data © OpenStreetMap contributors · Route estimates use OSRM drive times</footer>
+  </aside>
+  <main style="position:relative"><div id="map" aria-label="Interactive route map"></div><div class="map-badge">Click to add locations · drag to adjust</div></main>
+</div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script>
+(() => {
+  const MAX_STOPS = 24;
+  const map = L.map('map', { zoomControl: true }).setView([0, 0], 2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  const state = { depot: null, stops: [], markers: new Map(), routeLayer: null, nextId: 1, timer: null, controller: null, requestId: 0 };
+  const $ = (id) => document.getElementById(id);
+  const status = (message, error = false) => { $('status').textContent = message; $('status').classList.toggle('error', error); };
+  const icon = (kind, label) => L.divIcon({ className: '', html: `<div class="pin ${kind}"><span>${label}</span></div>`, iconSize: [30, 30], iconAnchor: [15, 27] });
+  const point = (latlng, id) => ({ id, lat: latlng.lat, lng: latlng.lng });
+  const markerFor = (location, kind, label) => {
+    const marker = L.marker([location.lat, location.lng], { draggable: true, icon: icon(kind, label) }).addTo(map);
+    marker.on('dragstart', clearRoute);
+    marker.on('dragend', () => {
+      const ll = marker.getLatLng();
+      if (kind === 'depot') state.depot = point(ll, 'depot');
+      else state.stops = state.stops.map((s) => s.id === location.id ? point(ll, s.id) : s);
+      renderList(); scheduleOptimize();
+    });
+    return marker;
+  };
+  function clearRoute() {
+    if (state.routeLayer) { map.removeLayer(state.routeLayer); state.routeLayer = null; }
+    $('stats').style.display = 'none';
+  }
+  function renderList() {
+    $('count').textContent = `${state.stops.length} / ${MAX_STOPS}`;
+    $('optimize').disabled = !state.depot || !state.stops.length;
+    const box = $('stops'); box.replaceChildren();
+    if (!state.depot && !state.stops.length) {
+      const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = 'No depot or stops yet. Click anywhere on the map to begin.'; box.append(empty); return;
+    }
+    if (state.depot) addRow(box, 'D', 'Depot', state.depot, true);
+    state.stops.forEach((stop, index) => addRow(box, String(index + 1), `Stop ${index + 1}`, stop));
+  }
+  function addRow(box, number, label, location, depot = false) {
+    const row = document.createElement('div'); row.className = 'stop-row';
+    const badge = document.createElement('span'); badge.className = 'stop-num'; badge.textContent = number;
+    const details = document.createElement('div'); details.style.flex = '1';
+    const name = document.createElement('div'); name.textContent = label;
+    const coords = document.createElement('div'); coords.className = 'stop-coord'; coords.textContent = `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`;
+    details.append(name, coords); row.append(badge, details); box.append(row);
+  }
+  function scheduleOptimize() {
+    clearTimeout(state.timer); state.timer = setTimeout(() => optimize(true), 450);
+    status('Location moved. Re-optimizing shortly…');
+  }
+  async function optimize(automatic = false) {
+    if (!state.depot || !state.stops.length) { if (!automatic) status('Add a depot and at least one stop first.', true); return; }
+    clearTimeout(state.timer); clearRoute();
+    if (state.controller) state.controller.abort();
+    const controller = new AbortController(); state.controller = controller;
+    const requestId = ++state.requestId;
+    $('optimize').disabled = true; $('optimize').textContent = 'Optimizing…';
+    status('Getting real drive times and solving the route…');
+    try {
+      const response = await fetch('/optimize', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+        body: JSON.stringify({ depot: state.depot, stops: state.stops, round_trip: $('roundTrip').checked })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Could not optimize this route.');
+      if (requestId !== state.requestId) return;
+      state.stops = data.stops;
+      data.stops.forEach((stop) => state.markers.get(stop.id)?.setLatLng([stop.lat, stop.lng]));
+      renderList();
+      state.routeLayer = L.geoJSON(data.route, { style: { color: '#235bd6', weight: 5, opacity: .88, lineCap: 'round', lineJoin: 'round' } }).addTo(map);
+      const bounds = state.routeLayer.getBounds();
+      if (bounds.isValid()) map.fitBounds(bounds.pad(.16), { maxZoom: 15 });
+      $('duration').textContent = formatDuration(data.duration_seconds);
+      $('distance').textContent = formatDistance(data.distance_meters);
+      $('stats').style.display = 'grid';
+      status(`${data.stops.length} stops ordered using road travel times.`);
+    } catch (error) {
+      if (error.name !== 'AbortError' && requestId === state.requestId) status(error.message, true);
+    } finally {
+      if (requestId === state.requestId) { $('optimize').disabled = !state.depot || !state.stops.length; $('optimize').textContent = 'Optimize route'; }
+    }
+  }
+  function formatDuration(seconds) {
+    const mins = Math.round((Number(seconds) || 0) / 60);
+    if (mins < 60) return `${mins} min`;
+    const hours = Math.floor(mins / 60), rest = mins % 60;
+    return rest ? `${hours} hr ${rest} min` : `${hours} hr`;
+  }
+  function formatDistance(meters) {
+    const km = (Number(meters) || 0) / 1000;
+    return km >= 100 ? `${Math.round(km)} km` : `${km.toFixed(km < 10 ? 1 : 0)} km`;
+  }
+  map.on('click', (event) => {
+    if (!state.depot) {
+      state.depot = point(event.latlng, 'depot');
+      state.markers.set('depot', markerFor(state.depot, 'depot', 'D'));
+      status('Depot added. Click the map to add delivery stops.');
+    } else if (state.stops.length >= MAX_STOPS) {
+      status(`You can add up to ${MAX_STOPS} stops.`, true);
+      return;
+    } else {
+      const stop = point(event.latlng, `stop-${state.nextId++}`);
+      state.stops.push(stop);
+      state.markers.set(stop.id, markerFor(stop, 'stop', String(state.stops.length)));
+      status('Stop added. Optimize when you are ready.');
+    }
+    clearRoute(); renderList();
+  });
+  $('optimize').addEventListener('click', () => optimize(false));
+  $('roundTrip').addEventListener('change', () => {
+    $('modeLabel').textContent = $('roundTrip').checked ? 'Round trip' : 'End at last stop';
+    if (state.depot && state.stops.length) optimize(true);
+  });
+  $('clear').addEventListener('click', () => {
+    clearTimeout(state.timer); if (state.controller) state.controller.abort(); state.requestId++;
+    state.markers.forEach((marker) => map.removeLayer(marker)); state.markers.clear();
+    state.depot = null; state.stops = []; state.nextId = 1; clearRoute(); $('stats').style.display = 'none';
+    status('Waiting for locations.'); renderList(); map.setView([0, 0], 2);
+  });
+  renderList();
+})();
+</script>
+</body>
+</html>
