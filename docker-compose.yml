@@ -12,6 +12,14 @@ services:
       MAX_STOPS: ${MAX_STOPS:-24}
       MAP_TILE_URL: ${MAP_TILE_URL:-https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png}
       MAP_ATTRIBUTION: ${MAP_ATTRIBUTION:-<a href="https://www.openstreetmap.org/copyright">&copy; OpenStreetMap contributors</a>}
+      GEOCODER_PROVIDER: ${GEOCODER_PROVIDER:-photon}
+      GEOCODER_BASE_URL: ${GEOCODER_BASE_URL:-https://photon.komoot.io}
+      GEOCODER_TIMEOUT_SECONDS: ${GEOCODER_TIMEOUT_SECONDS:-8}
+      GEOCODER_ATTRIBUTION: ${GEOCODER_ATTRIBUTION:-© OpenStreetMap contributors}
+      GEOCODER_USER_AGENT: ${GEOCODER_USER_AGENT:-RouteOptimizer/1.0 (location search; configure contact details)}
+      GEOCODER_CACHE_PATH: /var/lib/route-optimizer/geocoder.sqlite3
+    volumes:
+      - geocoder_cache:/var/lib/route-optimizer
     depends_on:
       osrm:
         condition: service_started
@@ -50,3 +58,4 @@ networks:
 volumes:
   caddy_data:
   caddy_config:
+  geocoder_cache:

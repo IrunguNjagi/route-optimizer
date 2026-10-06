@@ -21,6 +21,18 @@
     .instructions div { display:flex; gap:9px; align-items:flex-start; margin:4px 0; }
     .dot { flex:0 0 auto; width:8px; height:8px; margin-top:5px; border-radius:100%; background:#22a06b; }
     .dot.stop { background:#e88c39; }
+    .location-search { display:grid; gap:8px; }
+    .location-search label { font-size:13px; font-weight:700; }
+    .search-entry { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; }
+    .search-entry input { min-width:0; border:1px solid var(--line); border-radius:9px; padding:10px 11px; color:var(--ink); font:inherit; font-size:12px; }
+    .search-entry input:focus { outline:2px solid #235bd62b; border-color:var(--blue); }
+    .search-entry button { padding:9px 12px; color:#fff; background:#235bd6; font-size:12px; }
+    .search-note { color:var(--muted); font-size:10px; }
+    .search-results { display:grid; gap:6px; max-height:180px; overflow:auto; }
+    .search-result { display:block; border:1px solid var(--line); background:#fff; padding:9px 10px; text-align:left; }
+    .search-result:hover { border-color:#a9bff0; background:#f8faff; }
+    .search-result-title { display:block; color:var(--ink); font-size:11px; font-weight:650; line-height:1.35; overflow-wrap:anywhere; }
+    .search-result-action { display:block; margin-top:4px; color:var(--blue); font-size:10px; font-weight:700; }
     .stops { flex:1 0 90px; min-height:80px; overflow:auto; border-top:1px solid var(--line); }
     .empty { padding:18px 4px; color:#89919c; font-size:13px; }
     .stop-row { display:flex; align-items:center; gap:11px; border-bottom:1px solid #f0f2f5; padding:10px 3px; font-size:13px; }
@@ -49,20 +61,94 @@
     .pin.depot { background:#22a06b; }
     .pin.stop { background:#e88c39; }
     @media(max-width:760px) { .app { height:auto; min-height:100vh; grid-template-columns:1fr; grid-template-rows:minmax(55vh,1fr) auto; } #map { grid-row:1; min-height:55vh; } aside { grid-row:2; overflow:visible; padding:20px 18px; } .stops { max-height:180px; overflow:auto; } .map-badge { top:12px; left:12px; } }
+    /* Calm, editorial map-planning workspace */
+    body { background:#edf2f6; }
+    aside { gap:15px; padding:27px 24px 20px; box-shadow:8px 0 28px #12223a0a; }
+    header { padding:3px 0 7px; }
+    .eyebrow { display:flex; align-items:center; gap:8px; }
+    .eyebrow:before { content:""; width:8px; height:8px; border-radius:50%; background:#28a477; box-shadow:0 0 0 4px #28a47720; }
+    h1 { font-size:27px; letter-spacing:-.045em; }
+    .instructions { border:0; border-radius:14px; background:linear-gradient(135deg,#f2f8f5,#f5f7fb); padding:14px 15px; }
+    .location-search { position:relative; gap:9px; }
+    .search-entry { gap:0; border:1px solid #dce3eb; border-radius:12px; background:#fff; padding:4px; box-shadow:0 3px 12px #14223508; }
+    .search-entry:focus-within { border-color:#86a6ed; box-shadow:0 0 0 3px #235bd617; }
+    .search-entry input { border:0; outline:0!important; padding:10px 11px; font-size:13px; }
+    .search-entry input:focus { border:0; }
+    .search-entry button { border-radius:9px; padding:9px 14px; }
+    .location-tools { display:flex; align-items:center; gap:9px; min-height:29px; }
+    .location-button { border:1px solid #e3e9f0; border-radius:9px; padding:7px 10px; background:#fff; color:#42516a; font-size:11px; font-weight:650; }
+    .location-button:hover:not(:disabled) { border-color:#a9bff0; background:#f8faff; color:var(--blue); }
+    .location-hint { min-width:0; color:var(--muted); font-size:10px; }
+    .search-results { position:absolute; z-index:1000; top:78px; left:0; right:0; max-height:280px; overflow-y:auto; gap:0; border:1px solid #e0e6ed; border-radius:12px; background:#fff; box-shadow:0 14px 34px #17202d1c; }
+    .search-results:empty { display:none; }
+    .search-result { padding:11px 13px; border:0; border-bottom:1px solid #f0f2f5; border-radius:0; cursor:pointer; }
+    .search-result:last-child { border-bottom:0; }
+    .search-result-title { font-size:12px; }
+    .search-result-action { color:#7a8491; font-weight:550; }
+    .search-result[aria-selected="true"], .search-result:hover { background:#f3f7ff; }
+    .stops { border-top:1px solid #e9edf1; }
+    .stop-row { padding:11px 4px; }
+    .stop-details { flex:1; min-width:0; }
+    .stop-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .remove-location { flex:0 0 auto; border:1px solid transparent; border-radius:8px; padding:7px 9px; background:transparent; color:#89919c; font-size:11px; font-weight:650; }
+    .remove-location:hover, .remove-location:focus-visible { border-color:#f2d3d0; background:#fff4f2; color:#b42318; outline:none; }
+    .stop-num { width:28px; height:28px; }
+    .route-settings { background:#fbfcfd; }
+    .primary { background:linear-gradient(135deg,#2866dc,#194dbd); }
+    .map-badge { border-radius:11px; padding:9px 13px; box-shadow:0 5px 20px #18233222; }
+    .welcome-backdrop { position:fixed; z-index:2000; inset:0; display:grid; place-items:center; padding:22px; background:#101a2a99; backdrop-filter:blur(7px); }
+    .welcome-backdrop[hidden] { display:none; }
+    .welcome-card { position:relative; width:min(100%,480px); overflow:hidden; border:1px solid #ffffffad; border-radius:24px; background:#fff; box-shadow:0 28px 80px #101a2a55; }
+    .welcome-art { min-height:185px; display:grid; place-items:center; overflow:hidden; background:radial-gradient(circle at 55% 50%,#edf5ff 0 20%,transparent 21%),linear-gradient(135deg,#e9f5ef,#e9effb); }
+    .welcome-route { position:relative; width:230px; height:130px; }
+    .welcome-route svg { width:100%; height:100%; overflow:visible; }
+    .welcome-copy { padding:25px 30px 29px; }
+    .welcome-copy h2 { margin:7px 0 9px; font-size:27px; line-height:1.12; letter-spacing:-.045em; }
+    .welcome-copy p { margin:0; color:var(--muted); font-size:14px; }
+    .welcome-features { display:grid; gap:11px; margin:21px 0 23px; padding:0; list-style:none; color:#354253; font-size:13px; }
+    .welcome-features li { display:flex; align-items:center; gap:10px; }
+    .feature-icon { display:grid; place-items:center; width:27px; height:27px; flex:0 0 auto; border-radius:9px; background:#edf4ff; color:#235bd6; font-size:14px; }
+    .welcome-actions { display:flex; align-items:center; gap:12px; }
+    .welcome-actions .primary { flex:1; padding:13px; }
+    .welcome-skip { padding:10px 4px; background:transparent; color:#687382; font-weight:600; }
+    .intro-link { float:right; border:0; padding:0; background:none; color:#7b8490; font-size:11px; font-weight:600; }
+    @media(max-width:760px) { .welcome-card { border-radius:20px; } .welcome-copy { padding:22px; } }
   </style>
 </head>
 <body>
+<div id="welcome" class="welcome-backdrop" role="dialog" aria-modal="true" aria-labelledby="welcomeTitle" aria-describedby="welcomeDescription" hidden>
+  <section class="welcome-card">
+    <div class="welcome-art" aria-hidden="true"><div class="welcome-route"><svg viewBox="0 0 230 130" fill="none"><path d="M28 97C53 97 49 39 88 39s35 52 66 52 24-44 48-44" stroke="#fff" stroke-width="15" stroke-linecap="round"/><path d="M28 97C53 97 49 39 88 39s35 52 66 52 24-44 48-44" stroke="#3974dc" stroke-width="4" stroke-dasharray="3 8" stroke-linecap="round"/><circle cx="28" cy="97" r="11" fill="#24a477" stroke="white" stroke-width="4"/><circle cx="88" cy="39" r="9" fill="#f0a14f" stroke="white" stroke-width="4"/><circle cx="154" cy="91" r="9" fill="#f0a14f" stroke="white" stroke-width="4"/><circle cx="202" cy="47" r="11" fill="#3974dc" stroke="white" stroke-width="4"/></svg></div></div>
+    <div class="welcome-copy"><div class="eyebrow">A smarter way to make your rounds</div><h2 id="welcomeTitle">Every stop, in a better order.</h2><p id="welcomeDescription">Build a route around your day. We’ll use real road travel times to find a quicker sequence.</p>
+      <ul class="welcome-features"><li><span class="feature-icon">⌕</span>Search for real addresses and places</li><li><span class="feature-icon">↗</span>Optimize up to 24 stops with road times</li><li><span class="feature-icon">⤴</span>Choose a round trip or finish at your last stop</li></ul>
+      <div class="welcome-actions"><button id="startPlanning" class="primary">Start planning</button><button id="skipIntro" class="welcome-skip">Skip next time</button></div>
+    </div>
+  </section>
+</div>
 <div class="app">
   <aside>
     <header>
-      <div class="eyebrow">Drive-time routing</div>
+      <div class="eyebrow">Drive-time routing <button id="showIntro" class="intro-link" type="button">How it works</button></div>
       <h1>Route Optimizer</h1>
       <p class="subhead">Find the quickest order for your stops.</p>
     </header>
     <div class="instructions">
-      <div><i class="dot"></i><span>Click the map to place your depot first.</span></div>
-      <div><i class="dot stop"></i><span>Click again to add stops. Drag pins to move them.</span></div>
+      <div><i class="dot"></i><span>Search for a place or click the map to set your depot.</span></div>
+      <div><i class="dot stop"></i><span>Search again or click to add stops. Drag pins to move them.</span></div>
     </div>
+    <section class="location-search" aria-label="Search for a location">
+      <form id="searchForm">
+        <label for="locationQuery">Find a place</label>
+        <div class="search-entry">
+          <input id="locationQuery" type="search" maxlength="200" placeholder="Try a street, business or landmark" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="searchResults" aria-expanded="false">
+          <button id="searchButton" type="submit">Search</button>
+        </div>
+      </form>
+      <div class="location-tools"><button id="useLocation" class="location-button" type="button">◎ Use my location</button><small id="locationHint" class="location-hint" aria-live="polite">Allow location access to prioritize nearby places.</small></div>
+      <div id="searchResults" class="search-results" role="listbox" aria-label="Place suggestions" aria-live="polite"></div>
+      <small id="searchHint" class="search-note">Type at least 3 characters to see suggestions · Enter to select</small>
+      <small id="geocoderAttribution" class="search-note">Place data © OpenStreetMap contributors</small>
+    </section>
     <div class="section-title"><span>Your stops</span><span id="count" class="count">0 / 24</span></div>
     <div id="stops" class="stops"><div class="empty">No depot or stops yet. Click anywhere on the map to begin.</div></div>
     <label class="route-settings"><span>Return to depot</span><span class="toggle"><input id="roundTrip" type="checkbox" checked> <span id="modeLabel">Round trip</span></span></label>
@@ -83,26 +169,33 @@
 <script>
 (() => {
   let MAX_STOPS = 24;
+  let GEOCODER_PROVIDER = 'photon';
   const map = L.map('map', { zoomControl: true }).setView([0, 0], 2);
   fetch('/config').then((r) => r.ok ? r.json() : Promise.reject(new Error('Map configuration unavailable'))).then((cfg) => {
     L.tileLayer(cfg.map_tile_url, { maxZoom: 19, attribution: cfg.map_attribution }).addTo(map);
     MAX_STOPS = Number(cfg.max_stops) || 24;
+    GEOCODER_PROVIDER = cfg.geocoder_provider || 'photon';
+    if (GEOCODER_PROVIDER === 'nominatim') {
+      $('locationQuery').setAttribute('aria-autocomplete', 'none');
+      $('searchHint').textContent = 'Type an address or place, then press Search';
+    }
+    $('geocoderAttribution').textContent = `Place data ${cfg.geocoder_attribution || '© OpenStreetMap contributors'}`;
     renderList();
   }).catch(() => {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors' }).addTo(map);
   });
-  const state = { depot: null, stops: [], markers: new Map(), routeLayer: null, nextId: 1, timer: null, controller: null, requestId: 0 };
+  const state = { depot: null, stops: [], markers: new Map(), routeLayer: null, nextId: 1, timer: null, controller: null, requestId: 0, searchController: null, searchRequestId: 0, searchTimer: null, selectedSuggestion: -1, currentLocation: null, userLocationMarker: null };
   const $ = (id) => document.getElementById(id);
   const status = (message, error = false) => { $('status').textContent = message; $('status').classList.toggle('error', error); };
   const icon = (kind, label) => L.divIcon({ className: '', html: `<div class="pin ${kind}"><span>${label}</span></div>`, iconSize: [30, 30], iconAnchor: [15, 27] });
-  const point = (latlng, id) => ({ id, lat: latlng.lat, lng: latlng.lng });
+  const point = (latlng, id, label) => ({ id, lat: latlng.lat, lng: latlng.lng, ...(label ? { label } : {}) });
   const markerFor = (location, kind, label) => {
     const marker = L.marker([location.lat, location.lng], { draggable: true, icon: icon(kind, label) }).addTo(map);
     marker.on('dragstart', () => { cancelPending(); clearRoute(); });
     marker.on('dragend', () => {
       const ll = marker.getLatLng();
-      if (kind === 'depot') state.depot = point(ll, 'depot');
-      else state.stops = state.stops.map((s) => s.id === location.id ? point(ll, s.id) : s);
+      if (kind === 'depot') state.depot = point(ll, 'depot', state.depot?.label);
+      else state.stops = state.stops.map((s) => s.id === location.id ? point(ll, s.id, s.label) : s);
       renderList(); scheduleOptimize();
     });
     return marker;
@@ -131,14 +224,97 @@
   function addRow(box, number, label, location, depot = false) {
     const row = document.createElement('div'); row.className = 'stop-row';
     const badge = document.createElement('span'); badge.className = 'stop-num'; badge.textContent = number;
-    const details = document.createElement('div'); details.style.flex = '1';
-    const name = document.createElement('div'); name.textContent = label;
-    const coords = document.createElement('div'); coords.className = 'stop-coord'; coords.textContent = `${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`;
-    details.append(name, coords); row.append(badge, details); box.append(row);
+    const details = document.createElement('div'); details.className = 'stop-details';
+    const name = document.createElement('div'); name.className = 'stop-name'; name.textContent = location.label || label;
+    const coords = document.createElement('div'); coords.className = 'stop-coord'; coords.textContent = `${location.label ? `${label} · ` : ''}${location.lat.toFixed(5)}, ${location.lng.toFixed(5)}`;
+    const remove = document.createElement('button'); remove.type = 'button'; remove.className = 'remove-location';
+    remove.textContent = 'Remove'; remove.setAttribute('aria-label', `Remove ${depot ? 'depot' : label}`);
+    remove.addEventListener('click', () => removeLocation(location.id, depot));
+    details.append(name, coords); row.append(badge, details, remove); box.append(row);
+  }
+  function removeLocation(id, depot = false) {
+    cancelPending();
+    const marker = state.markers.get(id);
+    if (marker) map.removeLayer(marker);
+    state.markers.delete(id);
+    if (depot) state.depot = null;
+    else state.stops = state.stops.filter((stop) => stop.id !== id);
+
+    state.stops.forEach((stop, index) => {
+      const stopMarker = state.markers.get(stop.id);
+      if (stopMarker) stopMarker.setIcon(icon('stop', String(index + 1)));
+    });
+    clearRoute(); renderList();
+    if (depot) status(state.stops.length ? 'Depot removed. Your stops are still on the map; choose a new depot to continue.' : 'Depot removed. Choose a new depot to continue.');
+    else if (!state.stops.length) status('Last stop removed. Add at least one stop to optimize.');
+    else if (state.depot) scheduleOptimize();
+    else status('Stop removed. Add or choose a depot to continue.');
   }
   function scheduleOptimize() {
     clearTimeout(state.timer); state.timer = setTimeout(() => optimize(true), 450);
     status('Location moved. Re-optimizing shortly…');
+  }
+  async function searchPlaces(rawQuery) {
+    const query = rawQuery.trim();
+    const results = $('searchResults'); results.replaceChildren();
+    if (query.length < 3) { status('Enter at least 3 characters to search.', true); return; }
+    if (state.searchController) state.searchController.abort();
+    const controller = new AbortController(); state.searchController = controller;
+    const requestId = ++state.searchRequestId;
+    $('searchButton').disabled = true;
+    const loading = document.createElement('div'); loading.className = 'search-note'; loading.textContent = 'Searching places…'; results.append(loading);
+    status('Searching for matching locations…');
+    try {
+      const searchRequest = state.currentLocation && GEOCODER_PROVIDER === 'photon'
+        ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ q: query, lat: state.currentLocation.lat, lon: state.currentLocation.lng }) }
+        : { method: 'GET' };
+      const url = searchRequest.method === 'GET' ? `/search?q=${encodeURIComponent(query)}` : '/search';
+      const response = await fetch(url, { ...searchRequest, signal: controller.signal });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Location search failed.');
+      if (requestId !== state.searchRequestId) return;
+      results.replaceChildren();
+      if (!data.results.length) {
+        const empty = document.createElement('div'); empty.className = 'search-note'; empty.textContent = 'No matches found. Try a more specific address or place name.'; results.append(empty);
+        $('locationQuery').setAttribute('aria-expanded', 'true');
+        status('No matching places found.'); return;
+      }
+      data.results.forEach((place, index) => {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'search-result';
+        button.id = `place-suggestion-${requestId}-${index}`; button.setAttribute('role', 'option'); button.setAttribute('aria-selected', 'false');
+        const title = document.createElement('span'); title.className = 'search-result-title'; title.textContent = place.label;
+        const action = document.createElement('span'); action.className = 'search-result-action'; action.textContent = state.depot ? 'Add as stop' : 'Set as depot';
+        button.append(title, action); button.addEventListener('click', () => addSearchedPlace(place)); results.append(button);
+      });
+      $('locationQuery').setAttribute('aria-expanded', 'true'); state.selectedSuggestion = -1;
+      status(`${data.results.length} matching places. Choose one to add it to your route.`);
+    } catch (error) {
+      if (error.name !== 'AbortError' && requestId === state.searchRequestId) {
+        results.replaceChildren(); $('locationQuery').setAttribute('aria-expanded', 'false'); status(error.message, true);
+      }
+    } finally {
+      if (requestId === state.searchRequestId) { state.searchController = null; $('searchButton').disabled = false; }
+    }
+  }
+  function addSearchedPlace(place) {
+    if (state.depot && state.stops.length >= MAX_STOPS) { status(`You can add up to ${MAX_STOPS} stops.`, true); return; }
+    cancelPending();
+    const isDepot = !state.depot;
+    const id = isDepot ? 'depot' : `search-${state.nextId++}`;
+    const location = point({ lat: place.lat, lng: place.lng }, id, place.label);
+    if (isDepot) {
+      state.depot = location;
+      state.markers.set('depot', markerFor(location, 'depot', 'D'));
+    } else {
+      state.stops.push(location);
+      state.markers.set(location.id, markerFor(location, 'stop', String(state.stops.length)));
+    }
+    $('locationQuery').value = '';
+    $('searchResults').replaceChildren();
+    $('locationQuery').setAttribute('aria-expanded', 'false');
+    map.flyTo([location.lat, location.lng], Math.max(map.getZoom(), 14));
+    clearRoute(); renderList();
+    status(isDepot ? 'Location set as the depot. Search for or add delivery stops.' : 'Location added as a delivery stop.');
   }
   async function optimize(automatic = false) {
     if (!state.depot || !state.stops.length) { if (!automatic) status('Add a depot and at least one stop first.', true); return; }
@@ -187,6 +363,9 @@
   }
   map.on('click', (event) => {
     cancelPending();
+    if (state.searchController) { state.searchController.abort(); state.searchController = null; }
+    state.searchRequestId++; $('searchButton').disabled = false;
+    $('searchResults').replaceChildren();
     if (!state.depot) {
       state.depot = point(event.latlng, 'depot');
       state.markers.set('depot', markerFor(state.depot, 'depot', 'D'));
@@ -203,16 +382,80 @@
     clearRoute(); renderList();
   });
   $('optimize').addEventListener('click', () => optimize(false));
+  $('searchForm').addEventListener('submit', (event) => {
+    event.preventDefault(); searchPlaces($('locationQuery').value);
+  });
+  $('locationQuery').addEventListener('input', () => {
+    clearTimeout(state.searchTimer);
+    if (state.searchController) { state.searchController.abort(); state.searchController = null; }
+    state.searchRequestId++; $('searchButton').disabled = false; $('searchResults').replaceChildren();
+    $('locationQuery').setAttribute('aria-expanded', 'false'); $('locationQuery').removeAttribute('aria-activedescendant');
+    const query = $('locationQuery').value.trim();
+    if (GEOCODER_PROVIDER === 'photon' && query.length >= 3) state.searchTimer = setTimeout(() => searchPlaces(query), 320);
+  });
+  $('useLocation').addEventListener('click', () => {
+    if (!navigator.geolocation) { $('locationHint').textContent = 'This browser does not provide location access.'; return; }
+    $('useLocation').disabled = true; $('locationHint').textContent = 'Requesting your location…';
+    navigator.geolocation.getCurrentPosition((position) => {
+      state.currentLocation = { lat: position.coords.latitude, lng: position.coords.longitude };
+      $('useLocation').disabled = false;
+      $('locationHint').textContent = GEOCODER_PROVIDER === 'photon'
+        ? 'Nearby search is on. Coordinates are sent to the place-search service when you search.'
+        : 'Location saved for this session. Submit-only provider does not support nearby suggestions.';
+      // Jump directly to the user's area: animating from a world-scale view can
+      // stretch/interpolate loaded map tiles into a distracting blue frame.
+      map.stop();
+      map.setView([state.currentLocation.lat, state.currentLocation.lng], Math.max(map.getZoom(), 12), { animate: false });
+      if (state.userLocationMarker) map.removeLayer(state.userLocationMarker);
+      state.userLocationMarker = L.circleMarker([state.currentLocation.lat, state.currentLocation.lng], {
+        radius: 6, color: '#fff', weight: 2, fillColor: '#3974dc', fillOpacity: 1, interactive: false
+      }).addTo(map);
+      const query = $('locationQuery').value.trim();
+      if (GEOCODER_PROVIDER === 'photon' && query.length >= 3) searchPlaces(query);
+    }, (error) => {
+      $('useLocation').disabled = false;
+      const messages = {
+        1: 'Location permission was denied. Allow it in browser settings to search nearby.',
+        2: 'Your current location is unavailable. Try again or search by area.',
+        3: 'Location request timed out. Try again.'
+      };
+      $('locationHint').textContent = messages[error.code] || 'Could not get your location. Try searching by area.';
+    }, { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+  });
+  $('locationQuery').addEventListener('keydown', (event) => {
+    const options = [...$('searchResults').querySelectorAll('[role="option"]')];
+    if (event.key === 'ArrowDown' && options.length) { event.preventDefault(); state.selectedSuggestion = (state.selectedSuggestion + 1) % options.length; }
+    else if (event.key === 'ArrowUp' && options.length) { event.preventDefault(); state.selectedSuggestion = (state.selectedSuggestion - 1 + options.length) % options.length; }
+    else if (event.key === 'Escape') { $('searchResults').replaceChildren(); $('locationQuery').setAttribute('aria-expanded', 'false'); $('locationQuery').removeAttribute('aria-activedescendant'); return; }
+    else return;
+    options.forEach((option, index) => option.setAttribute('aria-selected', String(index === state.selectedSuggestion)));
+    const active = options[state.selectedSuggestion]; $('locationQuery').setAttribute('aria-activedescendant', active.id); active.scrollIntoView({ block: 'nearest' });
+  });
+  $('locationQuery').addEventListener('keydown', (event) => {
+    if (event.key !== 'Enter' || state.selectedSuggestion < 0) return;
+    const selected = $('searchResults').querySelectorAll('[role="option"]')[state.selectedSuggestion];
+    if (selected) { event.preventDefault(); selected.click(); }
+  });
   $('roundTrip').addEventListener('change', () => {
     $('modeLabel').textContent = $('roundTrip').checked ? 'Round trip' : 'End at last stop';
     if (state.depot && state.stops.length) optimize(true);
   });
   $('clear').addEventListener('click', () => {
     cancelPending();
+    if (state.searchController) { state.searchController.abort(); state.searchController = null; }
+    clearTimeout(state.searchTimer); state.searchRequestId++; $('searchButton').disabled = false; $('locationQuery').value = ''; $('searchResults').replaceChildren(); $('locationQuery').setAttribute('aria-expanded', 'false');
     state.markers.forEach((marker) => map.removeLayer(marker)); state.markers.clear();
     state.depot = null; state.stops = []; state.nextId = 1; clearRoute(); $('stats').style.display = 'none';
     status('Waiting for locations.'); renderList(); map.setView([0, 0], 2);
   });
+  const intro = $('welcome');
+  function closeIntro(remember = false) { intro.hidden = true; if (remember) localStorage.setItem('routeOptimizerIntroSeen', '1'); $('showIntro').focus(); }
+  if (!localStorage.getItem('routeOptimizerIntroSeen')) intro.hidden = false;
+  $('startPlanning').addEventListener('click', () => closeIntro(true));
+  $('skipIntro').addEventListener('click', () => closeIntro(true));
+  $('showIntro').addEventListener('click', () => { intro.hidden = false; $('startPlanning').focus(); });
+  intro.addEventListener('click', (event) => { if (event.target === intro) closeIntro(false); });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !intro.hidden) closeIntro(false); });
   renderList();
 })();
 </script>

@@ -1,6 +1,10 @@
 __pycache__/
 *.py[cod]
 .venv/
+venv/
 .env
+backend/geocoder-cache.sqlite3
+backend/geocoder-cache.sqlite3-shm
+backend/geocoder-cache.sqlite3-wal
 osrm/data/*
 !osrm/data/.gitkeep

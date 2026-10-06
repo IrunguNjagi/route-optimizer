@@ -1,6 +1,10 @@
+from pathlib import Path
+import tempfile
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
+import requests
+import app as route_app
 from app import ApiError, app
 
 
@@ -90,6 +94,74 @@ class RouteOptimizerApiTests(unittest.TestCase):
     def test_osrm_timeout_is_reported_as_gateway_timeout(self):
         with patch("app._osrm_get", side_effect=ApiError("The routing service timed out.", 504)):
             response = self.client.post("/optimize", json=self.payload)
+        self.assertEqual(response.status_code, 504)
+        self.assertIn("timed out", response.json["error"].lower())
+
+
+class GeocoderApiTests(unittest.TestCase):
+    def setUp(self):
+        app.config.update(TESTING=True)
+        self.client = app.test_client()
+
+    def test_search_validates_query_length(self):
+        response = self.client.get("/search?q=ab")
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("3 characters", response.json["error"])
+
+    def test_search_returns_and_caches_place_results(self):
+        upstream = Mock()
+        upstream.json.return_value = {"features": [{
+            "geometry": {"coordinates": [36.8172, -1.2864]},
+            "properties": {"osm_id": 42, "name": "Nairobi", "country": "Kenya"},
+        }]}
+        with tempfile.TemporaryDirectory() as cache_dir, patch.object(route_app, "GEOCODER_PROVIDER", "photon"):
+            cache_path = Path(cache_dir) / "geocoder.sqlite3"
+            with patch.object(route_app, "GEOCODER_CACHE_PATH", cache_path), patch.object(
+                route_app.requests, "get", return_value=upstream
+            ) as geocode:
+                first = self.client.get("/search?q=Nairobi")
+                second = self.client.get("/search?q=  NAIROBI  ")
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.json["results"][0]["label"], "Nairobi, Kenya")
+        self.assertEqual(first.json["results"][0]["lat"], -1.2864)
+        self.assertEqual(first.json["results"][0]["lng"], 36.8172)
+        self.assertEqual(geocode.call_count, 1)
+        self.assertTrue(geocode.call_args.args[0].endswith("/api"))
+        self.assertEqual(geocode.call_args.kwargs["params"]["q"], "Nairobi")
+
+    def test_nominatim_manual_search_shape_is_supported(self):
+        upstream = Mock()
+        upstream.json.return_value = [{
+            "place_id": 42,
+            "display_name": "Nairobi, Kenya",
+            "lat": "-1.2864",
+            "lon": "36.8172",
+        }]
+        with tempfile.TemporaryDirectory() as cache_dir:
+            cache_path = Path(cache_dir) / "geocoder.sqlite3"
+            with patch.object(route_app, "GEOCODER_PROVIDER", "nominatim"), patch.object(route_app, "GEOCODER_CACHE_PATH", cache_path), patch.object(
+                route_app.requests, "get", return_value=upstream
+            ) as geocode:
+                first = self.client.get("/search?q=Nairobi")
+                second = self.client.get("/search?q=  NAIROBI  ")
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(second.status_code, 200)
+        self.assertEqual(first.json["results"][0]["label"], "Nairobi, Kenya")
+        self.assertEqual(first.json["results"][0]["lat"], -1.2864)
+        self.assertEqual(first.json["results"][0]["lng"], 36.8172)
+        self.assertEqual(geocode.call_count, 1)
+        self.assertEqual(geocode.call_args.kwargs["params"]["format"], "jsonv2")
+        self.assertIn("RouteOptimizer", geocode.call_args.kwargs["headers"]["User-Agent"])
+
+    def test_search_timeout_returns_gateway_timeout(self):
+        with tempfile.TemporaryDirectory() as cache_dir:
+            with patch.object(
+                route_app, "GEOCODER_CACHE_PATH", Path(cache_dir) / "geocoder.sqlite3"
+            ), patch.object(route_app.requests, "get", side_effect=requests.Timeout):
+                response = self.client.get("/search?q=Nairobi")
         self.assertEqual(response.status_code, 504)
         self.assertIn("timed out", response.json["error"].lower())
 
