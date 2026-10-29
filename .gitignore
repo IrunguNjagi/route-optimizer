@@ -3,6 +3,7 @@ __pycache__/
 .venv/
 venv/
 .env
+.env.example
 backend/geocoder-cache.sqlite3
 backend/geocoder-cache.sqlite3-shm
 backend/geocoder-cache.sqlite3-wal
